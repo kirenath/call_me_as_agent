@@ -20,29 +20,33 @@ export default defineEventHandler(async (event) => {
     setResponseHeaders(event, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive'
+      'Connection': 'keep-alive',
+      'X-Accel-Buffering': 'no' // Prevent Nginx buffering
     })
-
+    
     keepAliveTimer = setInterval(() => {
-      // Send a SSE comment with a zero-width space to keep the connection alive
-      event.node.res.write(': \u200b\n\n')
+      // Send a simple SSE comment to keep-alive
+      if (!event.node.res.writableEnded) {
+        event.node.res.write(': keep-alive\n\n')
+      }
     }, settings.keepAliveInterval * 1000)
   }
 
   const result = await addRequest('openai', body)
   if (keepAliveTimer) clearInterval(keepAliveTimer)
 
-  const now = Math.floor(Date.now() / 1000)
-  const requestId = Math.random().toString(36).substring(2, 15)
-
   if (body.stream) {
     if (!getHeader(event, 'content-type')) {
       setResponseHeaders(event, {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive'
+        'Connection': 'keep-alive',
+        'X-Accel-Buffering': 'no'
       })
     }
+    
+    // Flush headers to start the stream
+    event.node.res.flushHeaders()
 
     const sendChunk = (chunk: any) => {
       event.node.res.write(`data: ${JSON.stringify(chunk)}\n\n`)

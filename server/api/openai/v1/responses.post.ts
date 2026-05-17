@@ -23,10 +23,13 @@ export default defineEventHandler(async (event) => {
     setResponseHeaders(event, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive'
+      'Connection': 'keep-alive',
+      'X-Accel-Buffering': 'no'
     })
     keepAliveTimer = setInterval(() => {
-      event.node.res.write(': \u200b\n\n')
+      if (!event.node.res.writableEnded) {
+        event.node.res.write(': keep-alive\n\n')
+      }
     }, settings.keepAliveInterval * 1000)
   }
 
@@ -38,9 +41,12 @@ export default defineEventHandler(async (event) => {
       setResponseHeaders(event, {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive'
+        'Connection': 'keep-alive',
+        'X-Accel-Buffering': 'no'
       })
     }
+
+    event.node.res.flushHeaders()
 
     const sendEvent = (eventName: string, data: any) => {
       event.node.res.write(`event: ${eventName}\ndata: ${JSON.stringify(data)}\n\n`)

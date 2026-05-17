@@ -19,12 +19,14 @@ export default defineEventHandler(async (event) => {
     setResponseHeaders(event, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive'
+      'Connection': 'keep-alive',
+      'X-Accel-Buffering': 'no'
     })
-
+    
     keepAliveTimer = setInterval(() => {
-      // Send a SSE comment with a zero-width space to keep the connection alive
-      event.node.res.write(': \u200b\n\n')
+      if (!event.node.res.writableEnded) {
+        event.node.res.write(': keep-alive\n\n')
+      }
     }, settings.keepAliveInterval * 1000)
   }
 
@@ -38,9 +40,12 @@ export default defineEventHandler(async (event) => {
       setResponseHeaders(event, {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive'
+        'Connection': 'keep-alive',
+        'X-Accel-Buffering': 'no'
       })
     }
+    
+    event.node.res.flushHeaders()
 
     const sendSSE = (eventName: string, data: any) => {
       event.node.res.write(`event: ${eventName}\ndata: ${JSON.stringify(data)}\n\n`)
