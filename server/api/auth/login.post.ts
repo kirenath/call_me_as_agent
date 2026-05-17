@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
   // Get client IP for rate limiting tracking (supports reverse proxy)
   const forwardedHeader = getHeader(event, 'x-forwarded-for')
   let ip = 'unknown'
-  
+
   if (typeof forwardedHeader === 'string' && forwardedHeader.length > 0) {
     const firstIp = forwardedHeader.split(',')[0]
     if (firstIp) {

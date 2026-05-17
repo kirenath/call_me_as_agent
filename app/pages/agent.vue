@@ -48,9 +48,16 @@ const activeRequest = computed(() => {
 
 // Automatically select first request if none selected
 watch(requests, (newRequests) => {
-  if (newRequests?.length && !activeRequestId.value) {
-    activeRequestId.value = newRequests[0]?.id || null
-  } else if (!newRequests?.length) {
+  if (newRequests?.length) {
+    newRequests.forEach((r) => {
+      if (simulateStream.value[r.id] === undefined) {
+        simulateStream.value[r.id] = true
+      }
+    })
+    if (!activeRequestId.value) {
+      activeRequestId.value = newRequests[0]?.id || null
+    }
+  } else {
     activeRequestId.value = null
   }
 }, { immediate: true })
@@ -70,6 +77,7 @@ onUnmounted(() => {
 
 const responses = ref<Record<string, string>>({})
 const structuredToolCalls = ref<Record<string, any[]>>({})
+const simulateStream = ref<Record<string, boolean>>({})
 const submitting = ref<Record<string, boolean>>({})
 const toast = useToast()
 
@@ -81,6 +89,10 @@ const copyToClipboard = (text: string) => {
 const addToolCall = (requestId: string, tool?: any) => {
   if (!structuredToolCalls.value[requestId]) {
     structuredToolCalls.value[requestId] = []
+  }
+
+  if (simulateStream.value[requestId] === undefined) {
+    simulateStream.value[requestId] = true
   }
 
   const parameters = tool?.function?.parameters?.properties || {}
@@ -161,16 +173,18 @@ const submitResponse = async (id: string) => {
       body: {
         id,
         response: responses.value[id] || '',
-        toolCalls: toolCalls.length > 0 ? toolCalls : null
+        toolCalls: toolCalls.length > 0 ? toolCalls : null,
+        simulateStream: simulateStream.value[id] !== false // Default to true
       }
     })
     delete responses.value[id]
     delete structuredToolCalls.value[id]
+    delete simulateStream.value[id]
     await refresh()
-    toast.add({ title: 'Response sent successfully', color: 'success' })
+    toast.add({ title: t('response_sent'), color: 'success' })
   } catch (error) {
     console.error('Failed to submit response:', error)
-    toast.add({ title: 'Failed to submit response', color: 'error' })
+    toast.add({ title: t('response_failed'), color: 'error' })
   } finally {
     submitting.value[id] = false
   }
@@ -279,7 +293,13 @@ const availableTools = computed(() => {
       <aside class="w-80 flex-shrink-0 border-r border-gray-200 dark:border-gray-800 flex flex-col bg-gray-50/50 dark:bg-gray-900/50">
         <div class="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
           <div class="flex items-center gap-2 text-primary-500">
-            <UButton icon="i-lucide-home" size="xs" variant="ghost" color="neutral" to="/" />
+            <UButton
+              icon="i-lucide-home"
+              size="xs"
+              variant="ghost"
+              color="neutral"
+              to="/"
+            />
             <h2 class="font-bold text-lg text-gray-900 dark:text-white">
               {{ t('requests_list') }}
             </h2>
@@ -634,7 +654,7 @@ const availableTools = computed(() => {
                           v-if="Object.keys(tc.arguments).length === 0"
                           class="text-xs text-gray-400 italic py-2"
                         >
-                          No parameters defined for this tool.
+                          {{ t('no_params') }}
                         </div>
                         <UButton
                           size="xs"
@@ -650,7 +670,11 @@ const availableTools = computed(() => {
                   </div>
                 </div>
 
-                <div class="flex justify-end gap-3">
+                <div class="flex justify-end items-center gap-6">
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs text-gray-500 font-medium">{{ t('simulate_stream') }}</span>
+                    <USwitch v-model="simulateStream[activeRequest.id]" />
+                  </div>
                   <UButton
                     :loading="submitting[activeRequest.id]"
                     color="primary"

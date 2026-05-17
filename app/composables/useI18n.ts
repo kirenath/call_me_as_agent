@@ -44,11 +44,14 @@ const translations = {
     manual_response: '手动回复',
     text_content: '文本内容',
     text_placeholder: '以助理身份输入您的回复...',
+    simulate_stream: '模拟流式输出',
     tool_calls: '工具调用',
     send_to_client: '发送给客户端',
     add_parameter: '添加参数',
     custom_tool: '自定义工具',
     new_param_name: '新参数名称:',
+    no_params: '此工具无需参数。',
+    released_under: '基于 MIT 协议发布',
 
     // Settings Page
     server_settings: '服务器设置',
@@ -63,6 +66,10 @@ const translations = {
     primary_color_desc: '整个应用程序的主要强调色。',
     language: '界面语言',
     language_desc: '系统全局显示语言。',
+    stream_speed: '模拟流式速度 (ms)',
+    stream_speed_desc: '字符输出之间的延迟时间（毫秒）。设置越小，输出越快。',
+    keep_alive_interval: '防超时保活间隔 (秒)',
+    keep_alive_desc: '在此间隔内发送一个零宽空格，防止连接因长时间等待人工回复而断开（0 为关闭）。',
     network_display: '网络与显示',
     public_base_url: '公开 Base URL',
     public_base_url_desc: '向用户展示的 API 端点根地址。',
@@ -74,7 +81,7 @@ const translations = {
     enable_api_key_auth: '开启 API Key 校验',
     enable_api_key_auth_desc: '要求客户端必须提供 API Key 才能访问 OpenAI 和 Claude 端点。',
     expected_api_key: '预期 API Key',
-    expected_api_key_desc: '客户端必须在 Header 中发送此完全一致的 Key。',
+    expected_api_key_desc: '客户端必须在 Header 中发送此完全一致的 Key。'
   },
   en: {
     // General
@@ -119,11 +126,14 @@ const translations = {
     manual_response: 'Manual Response',
     text_content: 'Text Content',
     text_placeholder: 'Type your response as the assistant...',
+    simulate_stream: 'Simulate Streaming',
     tool_calls: 'Tool Calls',
     send_to_client: 'Send to Client',
     add_parameter: 'Add Parameter',
     custom_tool: 'Custom Tool',
     new_param_name: 'New parameter name:',
+    no_params: 'No parameters defined for this tool.',
+    released_under: 'Released under MIT License',
 
     // Settings Page
     server_settings: 'Server Settings',
@@ -138,6 +148,10 @@ const translations = {
     primary_color_desc: 'The main accent color for the entire application.',
     language: 'System Language',
     language_desc: 'The global display language for the system.',
+    stream_speed: 'Simulated Stream Speed (ms)',
+    stream_speed_desc: 'The delay between characters (in milliseconds). Lower is faster.',
+    keep_alive_interval: 'Keep-alive Interval (sec)',
+    keep_alive_desc: 'Send a zero-width space at this interval to prevent timeout while waiting (0 to disable).',
     network_display: 'Network & Display',
     public_base_url: 'Public Base URL',
     public_base_url_desc: 'The root URL shown to users for the API endpoints.',
@@ -149,18 +163,18 @@ const translations = {
     enable_api_key_auth: 'Enable API Key Auth',
     enable_api_key_auth_desc: 'Require clients to provide an API key to access OpenAI and Claude endpoints.',
     expected_api_key: 'Expected API Key',
-    expected_api_key_desc: 'Clients must send this exact key in their headers.',
+    expected_api_key_desc: 'Clients must send this exact key in their headers.'
   }
 }
 
 export const useI18n = () => {
   const { data: settings } = useFetch<any>('/api/settings')
-  
+
   const t = (key: keyof typeof translations.en) => {
     const lang = settings.value?.language || 'zh'
     const bundle = translations[lang as 'zh' | 'en'] || translations.en
     return (bundle as any)[key] || key
   }
-  
+
   return { t, lang: computed(() => settings.value?.language || 'zh') }
 }

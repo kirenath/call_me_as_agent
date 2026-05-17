@@ -13,15 +13,34 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   console.log('[Claude] Received request:', body)
 
-  const result = await addRequest('claude', body)
-  const requestId = Math.random().toString(36).substring(2, 15)
-
-  if (body.stream) {
+  // Start keep-alive heartbeats while waiting for human response
+  let keepAliveTimer: NodeJS.Timeout | null = null
+  if (body.stream && settings.keepAliveInterval > 0) {
     setResponseHeaders(event, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
       'Connection': 'keep-alive'
     })
+    
+    keepAliveTimer = setInterval(() => {
+      // Send a SSE comment with a zero-width space to keep the connection alive
+      event.node.res.write(': \u200b\n\n')
+    }, settings.keepAliveInterval * 1000)
+  }
+
+  const result = await addRequest('claude', body)
+  if (keepAliveTimer) clearInterval(keepAliveTimer)
+
+  const requestId = Math.random().toString(36).substring(2, 15)
+
+  if (body.stream) {
+    if (!getHeader(event, 'content-type')) {
+      setResponseHeaders(event, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive'
+      })
+    }
 
     const sendSSE = (eventName: string, data: any) => {
       event.node.res.write(`event: ${eventName}\ndata: ${JSON.stringify(data)}\n\n`)
@@ -40,21 +59,36 @@ export default defineEventHandler(async (event) => {
       }
     })
 
-    // 2. Content block start (Text)
+    // 2. Content block (Character by character simulation)
     if (result.content) {
+      const content = result.content
+      const speed = result.simulateStream ? (settings.streamSpeed || 30) : 0
+
       sendSSE('content_block_start', {
         type: 'content_block_start',
         index: 0,
         content_block: { type: 'text', text: '' }
       })
-      sendSSE('content_block_delta', {
-        type: 'content_block_delta',
-        index: 0,
-        delta: { type: 'text_delta', text: result.content }
-      })
+
+      if (speed === 0) {
+        sendSSE('content_block_delta', {
+          type: 'content_block_delta',
+          index: 0,
+          delta: { type: 'text_delta', text: content }
+        })
+      } else {
+        for (let i = 0; i < content.length; i++) {
+          sendSSE('content_block_delta', {
+            type: 'content_block_delta',
+            index: 0,
+            delta: { type: 'text_delta', text: content[i] }
+          })
+          await new Promise(resolve => setTimeout(resolve, speed))
+        }
+      }
+
       sendSSE('content_block_stop', { type: 'content_block_stop', index: 0 })
     }
-
     // 3. Tool use blocks
     if (result.toolCalls && result.toolCalls.length > 0) {
       result.toolCalls.forEach((tc, i) => {

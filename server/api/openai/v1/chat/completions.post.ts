@@ -14,17 +14,35 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   console.log('[OpenAI] Received request:', body)
 
-  const result = await addRequest('openai', body)
-  const now = Math.floor(Date.now() / 1000)
-  const requestId = Math.random().toString(36).substring(2, 15)
-
-  if (body.stream) {
-    // Set headers for SSE
+  // Start keep-alive heartbeats while waiting for human response
+  let keepAliveTimer: NodeJS.Timeout | null = null
+  if (body.stream && settings.keepAliveInterval > 0) {
     setResponseHeaders(event, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
       'Connection': 'keep-alive'
     })
+    
+    keepAliveTimer = setInterval(() => {
+      // Send a SSE comment with a zero-width space to keep the connection alive
+      event.node.res.write(': \u200b\n\n')
+    }, settings.keepAliveInterval * 1000)
+  }
+
+  const result = await addRequest('openai', body)
+  if (keepAliveTimer) clearInterval(keepAliveTimer)
+
+  const now = Math.floor(Date.now() / 1000)
+  const requestId = Math.random().toString(36).substring(2, 15)
+
+  if (body.stream) {
+    if (!getHeader(event, 'content-type')) {
+      setResponseHeaders(event, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive'
+      })
+    }
 
     const sendChunk = (chunk: any) => {
       event.node.res.write(`data: ${JSON.stringify(chunk)}\n\n`)
@@ -39,17 +57,32 @@ export default defineEventHandler(async (event) => {
       choices: [{ index: 0, delta: { role: 'assistant' }, finish_reason: null }]
     })
 
-    // 2. Send content chunk
+    // 2. Send content in chunks (character by character simulation)
     if (result.content) {
-      sendChunk({
-        id: `chatcmpl-${requestId}`,
-        object: 'chat.completion.chunk',
-        created: now,
-        model: body.model || 'gpt-4o',
-        choices: [{ index: 0, delta: { content: result.content }, finish_reason: null }]
-      })
-    }
+      const content = result.content
+      const speed = result.simulateStream ? (settings.streamSpeed || 30) : 0
 
+      if (speed === 0) {
+        sendChunk({
+          id: `chatcmpl-${requestId}`,
+          object: 'chat.completion.chunk',
+          created: now,
+          model: body.model || 'gpt-4o',
+          choices: [{ index: 0, delta: { content }, finish_reason: null }]
+        })
+      } else {
+        for (let i = 0; i < content.length; i++) {
+          sendChunk({
+            id: `chatcmpl-${requestId}`,
+            object: 'chat.completion.chunk',
+            created: now,
+            model: body.model || 'gpt-4o',
+            choices: [{ index: 0, delta: { content: content[i] }, finish_reason: null }]
+          })
+          await new Promise(resolve => setTimeout(resolve, speed))
+        }
+      }
+    }
     // 3. Send tool calls chunk
     if (result.toolCalls && result.toolCalls.length > 0) {
       const tool_calls = result.toolCalls.map((tc, i) => ({

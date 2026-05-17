@@ -12,12 +12,12 @@ export interface PendingRequest {
   type: 'openai' | 'claude'
   payload: any
   timestamp: number
-  resolve: (data: { content: string, toolCalls?: ToolCall[] }) => void
+  resolve: (data: { content: string, toolCalls?: ToolCall[], simulateStream?: boolean }) => void
 }
 
 const pendingRequests = new Map<string, PendingRequest>()
 
-export const addRequest = (type: 'openai' | 'claude', payload: any): Promise<{ content: string, toolCalls?: ToolCall[] }> => {
+export const addRequest = (type: 'openai' | 'claude', payload: any): Promise<{ content: string, toolCalls?: ToolCall[], simulateStream?: boolean }> => {
   return new Promise((resolve) => {
     const id = Math.random().toString(36).substring(2, 15)
     pendingRequests.set(id, {
@@ -40,13 +40,13 @@ export const getPendingRequests = () => {
   }))
 }
 
-export const resolveRequest = (id: string, responseContent: string, toolCalls?: ToolCall[]) => {
+export const resolveRequest = (id: string, responseContent: string, toolCalls?: ToolCall[], simulateStream?: boolean) => {
   const request = pendingRequests.get(id)
   if (!request) {
     throw new Error(`Request ${id} not found`)
   }
 
-  request.resolve({ content: responseContent, toolCalls })
+  request.resolve({ content: responseContent, toolCalls, simulateStream })
   pendingRequests.delete(id)
-  console.log(`[RequestManager] Resolved request: ${id} with ${toolCalls?.length || 0} tool calls`)
+  console.log(`[RequestManager] Resolved request: ${id} with ${toolCalls?.length || 0} tool calls (Stream: ${!!simulateStream})`)
 }

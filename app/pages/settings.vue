@@ -13,6 +13,8 @@ const settingsForm = ref({
   siteTitle: '',
   siteSubtitle: '',
   pendingRequestsLabel: '',
+  streamSpeed: 30,
+  keepAliveInterval: 15,
   publicBaseUrl: '',
   primaryColor: 'green',
   language: 'zh',
@@ -67,7 +69,7 @@ const saveSettings = async () => {
       body: settingsForm.value
     })
     toast.add({ title: t('settings_saved'), color: 'success' })
-    
+
     // Update theme reactively
     if (import.meta.client) {
       const appConfig = useAppConfig()
@@ -171,6 +173,33 @@ const saveSettings = async () => {
                   v-model="settingsForm.language"
                   :items="[{ label: '简体中文', value: 'zh' }, { label: 'English', value: 'en' }]"
                   class="w-full"
+                />
+              </UFormField>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <UFormField
+                :label="t('stream_speed')"
+                :description="t('stream_speed_desc')"
+              >
+                <UInput
+                  v-model="settingsForm.streamSpeed"
+                  type="number"
+                  class="w-full"
+                  min="0"
+                  max="1000"
+                />
+              </UFormField>
+              <UFormField
+                :label="t('keep_alive_interval')"
+                :description="t('keep_alive_desc')"
+              >
+                <UInput
+                  v-model="settingsForm.keepAliveInterval"
+                  type="number"
+                  class="w-full"
+                  min="0"
+                  max="300"
                 />
               </UFormField>
             </div>
@@ -309,7 +338,7 @@ const saveSettings = async () => {
             target="_blank"
           />
           <span class="text-xs text-gray-400">|</span>
-          <span class="text-xs text-gray-400 text-center">Released under MIT License</span>
+          <span class="text-xs text-gray-400 text-center">{{ t('released_under') }}</span>
         </div>
       </div>
     </main>

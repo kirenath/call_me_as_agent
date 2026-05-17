@@ -12,6 +12,7 @@ export interface AppSettings {
   primaryColor: string
   language: 'zh' | 'en'
   pendingRequestsLabel: string
+  streamSpeed: number // ms delay between characters
   // Visibility Toggles
   showPendingCountPublic: boolean
   showApiKeyPublic: boolean
@@ -26,6 +27,8 @@ const defaultSettings: AppSettings = {
   primaryColor: 'green',
   language: 'zh',
   pendingRequestsLabel: '',
+  streamSpeed: 30,
+  keepAliveInterval: 15,
   showPendingCountPublic: true,
   showApiKeyPublic: true
 }

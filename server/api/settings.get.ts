@@ -7,10 +7,12 @@ export default defineEventHandler((_event) => {
     publicBaseUrl: settings.publicBaseUrl,
     primaryColor: settings.primaryColor,
     language: settings.language,
+    streamSpeed: settings.streamSpeed,
+    keepAliveInterval: settings.keepAliveInterval,
     pendingRequestsLabel: settings.pendingRequestsLabel,
     showPendingCountPublic: settings.showPendingCountPublic,
     showApiKeyPublic: settings.showApiKeyPublic,
-    enableApiKeyAuth: settings.enableApiKeyAuth,
+    enableApiKeyAuth: settings.enableApiKeyAuth
     // Do NOT return the actual apiKey here
   }
 })
