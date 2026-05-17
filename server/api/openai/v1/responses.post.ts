@@ -46,17 +46,19 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    const buildBaseResponse = (status: string, output: any[] = [], usage: any = null) => ({
+    const buildBaseResponse = (status: string, output: any[] = [], usage: any = null, assistantText: string = '') => ({
       id: `resp_${requestId}`,
       object: 'response',
-      created: now,
-      model: body.model || 'gpt-4o',
+      created_at: now,
       status,
-      output,
-      usage
+      model: body.model || 'gpt-4o',
+      output: (status === 'completed' || output.length > 0) ? output : [],
+      usage: status === 'completed' ? usage : null,
+      output_text: assistantText,
+      conversation_id: `conv_${requestId}`
     })
 
-    // 1. Initial events (IMMEDIATE)
+    // 1. Initial events
     emit('response.created', { response: buildBaseResponse('in_progress') })
     emit('response.in_progress', { response: buildBaseResponse('in_progress') })
 
@@ -68,7 +70,8 @@ export default defineEventHandler(async (event) => {
     }, (settings.keepAliveInterval || 15) * 1000)
 
     let outputIndex = 0
-    const allOutputItems: any[] = []
+    let totalAssistantText = ''
+    const finalOutputItems: any[] = []
 
     return new Promise<void>((resolve) => {
       request.onData = async (chunk) => {
@@ -77,6 +80,7 @@ export default defineEventHandler(async (event) => {
         // Handle Content
         if (chunk.content) {
           const content = chunk.content
+          totalAssistantText += content
           completionTokens += Math.ceil(content.length / 3)
           const itemId = `item_${Math.random().toString(36).substring(2, 9)}`
           
@@ -90,7 +94,7 @@ export default defineEventHandler(async (event) => {
               item_id: itemId,
               output_index: outputIndex,
               content_index: 0,
-              part: { type: 'output_text', text: '' }
+              part: { type: 'output_text', text: '', annotations: [] }
           })
 
           if (speed === 0) {
@@ -119,9 +123,9 @@ export default defineEventHandler(async (event) => {
               type: 'message',
               status: 'completed',
               role: 'assistant',
-              content: [{ type: 'output_text', text: content }]
+              content: [{ type: 'output_text', text: content, annotations: [] }]
           }
-          allOutputItems.push(completedItem)
+          finalOutputItems.push(completedItem)
 
           emit('response.output_text.done', {
               response_id: `resp_${requestId}`,
@@ -145,7 +149,7 @@ export default defineEventHandler(async (event) => {
           outputIndex++
         }
 
-        // Handle Tool Calls (Adopting Granular Reference Format)
+        // Handle Tool Calls
         if (chunk.toolCalls && chunk.toolCalls.length > 0) {
           chunk.toolCalls.forEach((tc) => {
             const tcItemId = `item_${Math.random().toString(36).substring(2, 9)}`
@@ -163,29 +167,25 @@ export default defineEventHandler(async (event) => {
               name: toolName, 
               arguments: formattedArgs 
             }
-            allOutputItems.push(toolItem)
+            finalOutputItems.push(toolItem)
 
-            // 1. Added
             emit('response.output_item.added', {
               response_id: `resp_${requestId}`,
               output_index: outputIndex,
-              item: { id: tcItemId, type: 'function_call', status: 'in_progress', name: toolName, arguments: '' }
+              item: { id: tcItemId, type: 'function_call', status: 'in_progress', name: toolName, arguments: '', call_id: callId }
             })
-            // 2. Delta
             emit('response.function_call_arguments.delta', {
               response_id: `resp_${requestId}`,
               item_id: tcItemId,
               output_index: outputIndex,
               delta: formattedArgs
             })
-            // 3. Done
             emit('response.function_call_arguments.done', {
               response_id: `resp_${requestId}`,
               item_id: tcItemId,
               output_index: outputIndex,
               arguments: formattedArgs
             })
-            // 4. Item Done
             emit('response.output_item.done', {
               response_id: `resp_${requestId}`,
               output_index: outputIndex,
@@ -204,20 +204,21 @@ export default defineEventHandler(async (event) => {
             input_tokens: promptTokens,
             output_tokens: completionTokens
           }
-          const finalResponse = buildBaseResponse('completed', allOutputItems, usage)
+          const finalResponse = buildBaseResponse('completed', finalOutputItems, usage, totalAssistantText)
 
-          // Terminal events
+          // --- TERMINATION SEQUENCE ---
+          
+          // 1. Send response.completed (Codex Handshake)
           emit('response.completed', {
             response: finalResponse
           })
 
+          // 2. Send response.done (Standard)
           emit('response.done', {
             response: finalResponse
           })
 
-          // Give a small tick for the buffer to flush
-          await new Promise(r => setTimeout(r, 150))
-          
+          await new Promise(r => setTimeout(r, 200))
           event.node.res.end()
           resolve()
         }
@@ -233,27 +234,37 @@ export default defineEventHandler(async (event) => {
     // Non-streaming
     return new Promise((resolve) => {
       const finalOutput: any[] = []
+      let totalText = ''
       request.onData = (chunk) => {
         if (chunk.content) {
+          totalText += chunk.content
           completionTokens += Math.ceil(chunk.content.length / 3)
-          finalOutput.push({ id: `item_${Math.random().toString(36).substring(2, 7)}`, type: 'message', role: 'assistant', content: [{ type: 'text', text: chunk.content }] })
+          finalOutput.push({ id: `item_${Math.random().toString(36).substring(2, 7)}`, type: 'message', role: 'assistant', status: 'completed', content: [{ type: 'output_text', text: chunk.content, annotations: [] }] })
         }
         if (chunk.toolCalls) {
           chunk.toolCalls.forEach(tc => {
             const formattedArgs = typeof tc.function?.arguments === 'string' ? tc.function.arguments : JSON.stringify(tc.function?.arguments || (tc as any).input || {})
             completionTokens += Math.ceil(formattedArgs.length / 3)
-            finalOutput.push({ id: tc.id || `item_tc_${Math.random().toString(36).substring(2, 7)}`, type: 'function_call', status: 'completed', name: tc.function?.name || (tc as any).name, arguments: formattedArgs })
+            finalOutput.push({ 
+                id: `item_${Math.random().toString(36).substring(2, 7)}`, 
+                type: 'function_call', 
+                status: 'completed', 
+                name: tc.function?.name || (tc as any).name, 
+                arguments: formattedArgs,
+                call_id: tc.id || `call_${Math.random().toString(36).substring(2, 9)}`
+            })
           })
         }
         if (chunk.isFinal) {
           resolve({
             id: `resp_${requestId}`,
             object: 'response',
-            created: now,
+            created_at: now,
             model: body.model || 'gpt-4o',
             status: 'completed',
             output: finalOutput,
-            usage: { prompt_tokens: promptTokens, completion_tokens: completionTokens, total_tokens: promptTokens + completionTokens }
+            output_text: totalText,
+            usage: { input_tokens: promptTokens, output_tokens: completionTokens, total_tokens: promptTokens + completionTokens }
           })
         }
       }

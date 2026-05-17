@@ -114,11 +114,15 @@ const addToolCall = (requestId: string, tool?: any) => {
     simulateStream.value[requestId] = true
   }
 
-  const parameters = tool?.function?.parameters?.properties || {}
+  // Support both tool.function.parameters (Chat) and tool.parameters (Responses)
+  const toolFn = tool?.function || tool
+  const parameters = toolFn?.parameters?.properties || {}
   const args: Record<string, any> = {}
+  
   Object.keys(parameters).forEach((key) => {
     const prop = parameters[key]
-    if (key === 'questions' && (tool?.function?.name === 'ask_user' || tool?.name === 'ask_user')) {
+    const toolName = toolFn?.name || ''
+    if (key === 'questions' && toolName === 'ask_user') {
       args[key] = [{
         question: 'Your question here?',
         header: 'Query',
@@ -135,8 +139,8 @@ const addToolCall = (requestId: string, tool?: any) => {
 
   structuredToolCalls.value[requestId].push({
     id: 'call_' + Math.random().toString(36).substring(2, 9),
-    name: tool?.function?.name || tool?.name || 'custom_tool',
-    description: tool?.function?.description || tool?.description || '',
+    name: toolFn?.name || 'custom_tool',
+    description: toolFn?.description || '',
     arguments: args,
     parameters: parameters
   })

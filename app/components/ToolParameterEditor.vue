@@ -38,7 +38,6 @@ const addArrayItem = () => {
     newItem = []
   }
 
-  // Specific fallback for ask_user if schema is missing properties
   if (props.name === 'questions' && !itemSchema.properties) {
     newItem = { question: 'New question?', header: 'Info', type: 'text' }
   }
@@ -74,6 +73,14 @@ const removeObjectKey = (key: string) => {
 
 <template>
   <div class="w-full">
+    <!-- Parameter Description (The missing part) -->
+    <div
+      v-if="schema?.description"
+      class="text-[10px] text-gray-400 mb-1 leading-tight italic"
+    >
+      {{ schema.description }}
+    </div>
+
     <template v-if="isArray">
       <div class="space-y-2 border-l-2 border-primary-200 dark:border-primary-900 pl-3 ml-1 mt-1">
         <div
@@ -143,8 +150,19 @@ const removeObjectKey = (key: string) => {
     </template>
 
     <template v-else>
+      <!-- Support for Enum -->
+      <div v-if="schema?.enum">
+        <USelect
+          :model-value="modelValue"
+          :items="schema.enum"
+          size="sm"
+          class="w-full"
+          @update:model-value="updateValue"
+        />
+      </div>
+
       <div
-        v-if="schema?.type === 'boolean'"
+        v-else-if="schema?.type === 'boolean'"
         class="flex items-center h-8"
       >
         <UCheckbox
