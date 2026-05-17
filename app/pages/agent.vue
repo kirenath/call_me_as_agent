@@ -193,11 +193,29 @@ const submitResponse = async (id: string) => {
 
 const getMessages = (payload: any) => {
   let messages: any[] = []
+
+  // Support for standard Chat Completions
   if (payload.messages) {
     messages = [...payload.messages]
-  }
-  if (payload.system && typeof payload.system === 'string') {
-    messages.unshift({ role: 'system', content: payload.system })
+    if (payload.system && typeof payload.system === 'string') {
+      messages.unshift({ role: 'system', content: payload.system })
+    }
+  } 
+  // Support for new Responses API
+  else if (payload.input || payload.instructions) {
+    if (payload.instructions) {
+      messages.push({ role: 'system', content: payload.instructions })
+    }
+    if (typeof payload.input === 'string') {
+      messages.push({ role: 'user', content: payload.input })
+    } else if (Array.isArray(payload.input)) {
+      payload.input.forEach((item: any) => {
+        messages.push({ 
+          role: item.role || (item.type === 'message' ? 'user' : 'tool'), 
+          content: item.content || item.text || item.arguments || JSON.stringify(item) 
+        })
+      })
+    }
   }
 
   return messages.map((m) => {

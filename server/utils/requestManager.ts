@@ -9,7 +9,7 @@ export interface ToolCall {
 
 export interface PendingRequest {
   id: string
-  type: 'openai' | 'claude'
+  type: 'openai' | 'claude' | 'openai-responses'
   payload: any
   timestamp: number
   resolve: (data: { content: string, toolCalls?: ToolCall[], simulateStream?: boolean }) => void
@@ -17,7 +17,7 @@ export interface PendingRequest {
 
 const pendingRequests = new Map<string, PendingRequest>()
 
-export const addRequest = (type: 'openai' | 'claude', payload: any): Promise<{ content: string, toolCalls?: ToolCall[], simulateStream?: boolean }> => {
+export const addRequest = (type: 'openai' | 'claude' | 'openai-responses', payload: any): Promise<{ content: string, toolCalls?: ToolCall[], simulateStream?: boolean }> => {
   return new Promise((resolve) => {
     const id = Math.random().toString(36).substring(2, 15)
     pendingRequests.set(id, {
