@@ -1,13 +1,12 @@
 <script setup lang="ts">
 interface PendingRequest {
   id: string
-  type: 'openai' | 'claude'
+  type: 'openai' | 'claude' | 'openai-responses'
   payload: any
   timestamp: number
 }
 
 const { data: requests, refresh } = useFetch<PendingRequest[]>('/api/internal/requests')
-const { data: settings } = useFetch<any>('/api/settings')
 const activeRequestId = ref<string | null>(null)
 const isAuthenticated = ref(true)
 const loginPassword = ref('')
@@ -80,6 +79,7 @@ const responses = ref<Record<string, string>>({})
 const structuredToolCalls = ref<Record<string, any[]>>({})
 const simulateStream = ref<Record<string, boolean>>({})
 const submitting = ref<Record<string, boolean>>({})
+const finishing = ref<Record<string, boolean>>({})
 const toast = useToast()
 
 const copyToClipboard = (text: string) => {
@@ -135,47 +135,63 @@ const promptNewParameter = (tc: any) => {
   }
 }
 
-const submitResponse = async (id: string) => {
-  submitting.value[id] = true
-  try {
-    const toolCalls = (structuredToolCalls.value[id] || []).map((tc) => {
-      const parsedArgs: Record<string, any> = {}
-      for (const [key, val] of Object.entries(tc.arguments)) {
-        const prop = tc.parameters?.[key]
-        if (typeof val === 'string') {
-          if (prop?.type === 'number' || prop?.type === 'integer') {
-            parsedArgs[key] = val !== '' ? Number(val) : undefined
-          } else if (prop?.type === 'boolean') {
-            parsedArgs[key] = val === 'true' || val === '1'
-          } else {
-            parsedArgs[key] = val
-          }
+const parseToolCalls = (id: string) => {
+  return (structuredToolCalls.value[id] || []).map((tc) => {
+    const parsedArgs: Record<string, any> = {}
+    for (const [key, val] of Object.entries(tc.arguments)) {
+      const prop = tc.parameters?.[key]
+      if (typeof val === 'string') {
+        if (prop?.type === 'number' || prop?.type === 'integer') {
+          parsedArgs[key] = val !== '' ? Number(val) : undefined
+        } else if (prop?.type === 'boolean') {
+          parsedArgs[key] = val === 'true' || val === '1'
         } else {
           parsedArgs[key] = val
         }
-        // Clean up undefined
-        if (parsedArgs[key] === undefined) {
-          delete parsedArgs[key]
-        }
+      } else {
+        parsedArgs[key] = val
       }
+      if (parsedArgs[key] === undefined) delete parsedArgs[key]
+    }
+    return { id: tc.id, type: 'function', function: { name: tc.name, arguments: JSON.stringify(parsedArgs) } }
+  })
+}
 
-      return {
-        id: tc.id,
-        type: 'function',
-        function: {
-          name: tc.name,
-          arguments: JSON.stringify(parsedArgs)
-        }
-      }
-    })
-
+const sendPart = async (id: string) => {
+  submitting.value[id] = true
+  try {
+    const toolCalls = parseToolCalls(id)
     await $fetch('/api/internal/respond', {
       method: 'POST',
       body: {
         id,
         response: responses.value[id] || '',
         toolCalls: toolCalls.length > 0 ? toolCalls : null,
-        simulateStream: simulateStream.value[id] !== false // Default to true
+        simulateStream: simulateStream.value[id] !== false
+      }
+    })
+    responses.value[id] = ''
+    structuredToolCalls.value[id] = []
+    toast.add({ title: t('response_sent'), color: 'success' })
+  } catch (error) {
+    console.error('Failed to send part:', error)
+    toast.add({ title: t('response_failed'), color: 'error' })
+  } finally {
+    submitting.value[id] = false
+  }
+}
+
+const finish = async (id: string) => {
+  finishing.value[id] = true
+  try {
+    const toolCalls = parseToolCalls(id)
+    await $fetch('/api/internal/finish', {
+      method: 'POST',
+      body: {
+        id,
+        response: responses.value[id] || '',
+        toolCalls: toolCalls.length > 0 ? toolCalls : null,
+        simulateStream: simulateStream.value[id] !== false
       }
     })
     delete responses.value[id]
@@ -184,15 +200,23 @@ const submitResponse = async (id: string) => {
     await refresh()
     toast.add({ title: t('response_sent'), color: 'success' })
   } catch (error) {
-    console.error('Failed to submit response:', error)
+    console.error('Failed to finish request:', error)
     toast.add({ title: t('response_failed'), color: 'error' })
   } finally {
-    submitting.value[id] = false
+    finishing.value[id] = false
   }
 }
 
 const getMessages = (payload: any) => {
   let messages: any[] = []
+
+  const extractText = (content: any): string => {
+    if (typeof content === 'string') return content
+    if (Array.isArray(content)) {
+      return content.map(c => c.text || c.arguments || JSON.stringify(c)).join('\n')
+    }
+    return content?.text || content?.arguments || JSON.stringify(content)
+  }
 
   // Support for standard Chat Completions
   if (payload.messages) {
@@ -210,9 +234,17 @@ const getMessages = (payload: any) => {
       messages.push({ role: 'user', content: payload.input })
     } else if (Array.isArray(payload.input)) {
       payload.input.forEach((item: any) => {
+        let role = item.role
+        if (!role) {
+           if (item.type === 'message') role = 'user'
+           else if (item.type === 'developer_message') role = 'system'
+           else role = 'tool'
+        }
+        if (role === 'developer') role = 'system'
+
         messages.push({ 
-          role: item.role || (item.type === 'message' ? 'user' : 'tool'), 
-          content: item.content || item.text || item.arguments || JSON.stringify(item) 
+          role, 
+          content: extractText(item.content || item)
         })
       })
     }
@@ -361,7 +393,7 @@ const availableTools = computed(() => {
             >
               <div class="flex justify-between items-start mb-1">
                 <UBadge
-                  :color="req.type === 'openai' ? 'primary' : 'info'"
+                  :color="req.type === 'claude' ? 'info' : 'primary'"
                   variant="subtle"
                   size="xs"
                 >
@@ -446,7 +478,7 @@ const availableTools = computed(() => {
                 to="https://github.com/huangdihd/call_me_as_agent"
                 target="_blank"
               />
-              <span class="text-[10px] text-gray-400 font-medium">MIT License</span>
+              <span class="text-[10px] text-gray-400 font-medium">{{ t('released_under') }}</span>
             </div>
             <span class="text-[10px] text-gray-400">v1.0.0</span>
           </div>
@@ -463,7 +495,7 @@ const availableTools = computed(() => {
                   {{ t('request_details') }}
                 </h1>
                 <UBadge
-                  :color="activeRequest.type === 'openai' ? 'primary' : 'info'"
+                  :color="activeRequest.type === 'claude' ? 'info' : 'primary'"
                   variant="solid"
                 >
                   {{ activeRequest.type.toUpperCase() }}
@@ -556,7 +588,7 @@ const availableTools = computed(() => {
                           />
                           TOOL CALL: {{ tc.function?.name || (tc as any).name }}
                         </div>
-                        <pre class="text-[10px] font-mono overflow-x-auto">{{ tc.function?.arguments || JSON.stringify((tc as any).input, null, 2) }}</pre>
+                        <pre class="text-[10px] font-mono overflow-x-auto">{{ tc.function?.arguments || JSON.stringify((tc as any).input || {}) }}</pre>
                       </div>
                     </div>
 
@@ -712,18 +744,29 @@ const availableTools = computed(() => {
                     <span class="text-xs text-gray-500 font-medium">{{ t('simulate_stream') }}</span>
                     <USwitch v-model="simulateStream[activeRequest.id]" />
                   </div>
-                  <UButton
-                    :loading="submitting[activeRequest.id]"
-                    color="primary"
-                    size="lg"
-                    :disabled="!responses[activeRequest?.id || ''] && (!structuredToolCalls[activeRequest?.id || ''] || structuredToolCalls[activeRequest?.id || '']?.length === 0)"
-                    @click="submitResponse(activeRequest.id)"
-                  >
-                    {{ t('send_to_client') }}
-                    <template #trailing>
-                      <UIcon name="i-lucide-send" />
-                    </template>
-                  </UButton>
+                  <div class="flex items-center gap-3">
+                    <UButton
+                        :loading="submitting[activeRequest.id]"
+                        color="neutral"
+                        variant="soft"
+                        size="lg"
+                        :disabled="!responses[activeRequest?.id || ''] && (!structuredToolCalls[activeRequest?.id || ''] || structuredToolCalls[activeRequest?.id || '']?.length === 0)"
+                        @click="sendPart(activeRequest.id)"
+                    >
+                        {{ t('send_to_client') }}
+                    </UButton>
+                    <UButton
+                        :loading="finishing[activeRequest.id]"
+                        color="primary"
+                        size="lg"
+                        @click="finish(activeRequest.id)"
+                    >
+                        {{ t('finish_request') }}
+                        <template #trailing>
+                        <UIcon name="i-lucide-check-circle" />
+                        </template>
+                    </UButton>
+                  </div>
                 </div>
               </div>
             </section>

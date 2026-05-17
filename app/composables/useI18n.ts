@@ -33,6 +33,7 @@ const translations = {
     disabled: '已关闭',
     active: '已激活',
     bypass: '已跳过',
+    released_under: '基于 MIT 协议发布',
 
     // Agent Page
     requests_list: '请求列表',
@@ -47,12 +48,12 @@ const translations = {
     text_placeholder: '以助理身份输入您的回复...',
     simulate_stream: '模拟流式输出',
     tool_calls: '工具调用',
-    send_to_client: '发送给客户端',
+    send_to_client: '发送',
+    finish_request: '完成卡',
     add_parameter: '添加参数',
     custom_tool: '自定义工具',
     new_param_name: '新参数名称:',
     no_params: '此工具无需参数。',
-    released_under: '基于 MIT 协议发布',
 
     // Settings Page
     server_settings: '服务器设置',
@@ -118,6 +119,7 @@ const translations = {
     disabled: 'Disabled',
     active: 'Active',
     bypass: 'Bypass',
+    released_under: 'Released under MIT License',
 
     // Agent Page
     requests_list: 'Requests',
@@ -132,12 +134,12 @@ const translations = {
     text_placeholder: 'Type your response as the assistant...',
     simulate_stream: 'Simulate Streaming',
     tool_calls: 'Tool Calls',
-    send_to_client: 'Send to Client',
+    send_to_client: 'Send',
+    finish_request: 'Finish Card',
     add_parameter: 'Add Parameter',
     custom_tool: 'Custom Tool',
     new_param_name: 'New parameter name:',
     no_params: 'No parameters defined for this tool.',
-    released_under: 'Released under MIT License',
 
     // Settings Page
     server_settings: 'Server Settings',
