@@ -20,19 +20,25 @@
 
 ## 🚀 快速开始
 
-1. **安装依赖**:
+1. **克隆仓库**:
+   ```bash
+   git clone https://github.com/huangdihd/call_me_as_agent.git
+   cd call_me_as_agent
+   ```
+
+2. **安装依赖**:
    ```bash
    npm install
    ```
 
-2. **配置认证**:
+3. **配置认证**:
    在根目录创建 `.env` 文件并设置管理密码：
    ```env
    ADMIN_PASSWORD=你的安全密码
    ```
    *(如果未设置，面板将处于免密模式，仅建议本地测试使用)。*
 
-3. **启动服务器**:
+4. **启动服务器**:
    ```bash
    npm run dev
    ```
