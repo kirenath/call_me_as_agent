@@ -135,7 +135,7 @@ const translations = {
     simulate_stream: 'Simulate Streaming',
     tool_calls: 'Tool Calls',
     send_to_client: 'Send',
-    finish_request: 'Finish',
+    finish_request: 'Finish Response',
     add_parameter: 'Add Parameter',
     custom_tool: 'Custom Tool',
     new_param_name: 'New parameter name:',

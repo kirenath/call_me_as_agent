@@ -185,8 +185,8 @@ const siteSubtitle = computed(() => settings.value?.siteSubtitle || 'A Human-in-
         </section>
       </div>
 
-      <footer class="mt-20 pt-10 border-t border-gray-200 dark:border-gray-800 flex justify-between items-center text-xs text-gray-400">
-        <div class="flex items-center gap-4">
+      <footer class="mt-20 pt-10 border-t border-gray-200 dark:border-gray-800 flex flex-col md:flex-row justify-between items-center gap-6 text-xs text-gray-400">
+        <div class="flex flex-wrap justify-center items-center gap-4">
           <div class="flex items-center gap-2">
             <span class="font-bold text-gray-500 dark:text-gray-300">{{ siteTitle }}</span>
             <span>{{ t('released_under') }}</span>
