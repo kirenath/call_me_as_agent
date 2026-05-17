@@ -16,10 +16,6 @@ export default defineNuxtConfig({
     adminPassword: process.env.ADMIN_PASSWORD || ''
   },
 
-  routeRules: {
-    '/': { prerender: true }
-  },
-
   compatibilityDate: '2025-01-15',
 
   nitro: {
