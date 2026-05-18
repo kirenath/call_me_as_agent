@@ -54,6 +54,7 @@
 将你的 LLM 客户端的 Base URL 指向本地服务器。
 
 - **OpenAI 基础地址**: `http://localhost:3000/api/openai/v1`
+- **OpenAI Responses (beta)**: `http://localhost:3000/api/openai/v1/responses` (专为 OpenAI 官方 SDK 的 `responses.create` 设计)
 - **Claude 基础地址**: `http://localhost:3000/api/claude`
 - **API Key**: 默认无需填写（除非在设置中开启了 API Key 校验）。
 
