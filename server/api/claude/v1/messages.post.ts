@@ -64,7 +64,6 @@ export default defineEventHandler(async (event) => {
       request.onData = async (chunk) => {
         const speed = chunk.simulateStream ? (settings.streamSpeed || 30) : 0
 
-
         // Handle Content
         if (chunk.content) {
           const content = chunk.content
@@ -135,8 +134,8 @@ export default defineEventHandler(async (event) => {
             usage: { output_tokens: completionTokens }
           })
           sendSSE('message_stop', { type: 'message_stop' })
-          
-          import('../../utils/statsManager').then(({ incrementTokens }) => {
+
+          import('../../../utils/statsManager').then(({ incrementTokens }) => {
             incrementTokens(promptTokens, completionTokens)
           })
 
@@ -156,7 +155,7 @@ export default defineEventHandler(async (event) => {
     return new Promise((resolve) => {
       const bufferedContent: any[] = []
 
-      request.onData = (chunk) => {
+      request.onData = async (chunk) => {
         if (chunk.content) {
           completionTokens += Math.ceil(chunk.content.length / 3)
           bufferedContent.push({ type: 'text', text: chunk.content })
@@ -175,7 +174,7 @@ export default defineEventHandler(async (event) => {
         }
 
         if (chunk.isFinal) {
-          import('../../utils/statsManager').then(({ incrementTokens }) => {
+          import('../../../utils/statsManager').then(({ incrementTokens }) => {
             incrementTokens(promptTokens, completionTokens)
           })
 

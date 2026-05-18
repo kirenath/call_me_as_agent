@@ -220,11 +220,11 @@ const sendPart = async (id: string) => {
       _is_manual: true
     })
 
-    toast.add({ title: t('response_sent'), color: 'primary', timeout: settings.value?.toastTimeout || 3000 })
+    toast.add({ title: t('response_sent'), color: 'primary', duration: settings.value?.toastTimeout ? Number(settings.value.toastTimeout) : 3000 })
     scrollToBottom()
   } catch (error) {
     console.error('Failed to send part:', error)
-    toast.add({ title: t('response_failed'), color: 'error', timeout: settings.value?.toastTimeout || 3000 })
+    toast.add({ title: t('response_failed'), color: 'error', duration: settings.value?.toastTimeout ? Number(settings.value.toastTimeout) : 3000 })
   } finally {
     submitting.value[id] = false
   }
@@ -255,11 +255,11 @@ const finish = async (id: string) => {
     delete simulateStream.value[id]
     delete sentHistory.value[id]
     await refresh()
-    toast.add({ title: t('response_sent'), color: 'primary', timeout: settings.value?.toastTimeout || 3000 })
+    toast.add({ title: t('response_sent'), color: 'primary', duration: settings.value?.toastTimeout ? Number(settings.value.toastTimeout) : 3000 })
     scrollToBottom()
   } catch (error) {
     console.error('Failed to finish request:', error)
-    toast.add({ title: t('response_failed'), color: 'error', timeout: settings.value?.toastTimeout || 3000 })
+    toast.add({ title: t('response_failed'), color: 'error', duration: settings.value?.toastTimeout ? Number(settings.value.toastTimeout) : 3000 })
   } finally {
     finishing.value[id] = false
   }
@@ -519,7 +519,10 @@ const availableTools = computed(() => {
                     v-if="submitting[req.id]"
                     class="text-[10px] text-primary-500 font-bold animate-pulse flex items-center gap-1"
                   >
-                    <UIcon name="i-lucide-loader-2" class="animate-spin" /> Sending...
+                    <UIcon
+                      name="i-lucide-loader-2"
+                      class="animate-spin"
+                    /> Sending...
                   </span>
                   <span class="text-[10px] text-gray-400">{{ formatTimestamp(req.timestamp) }}</span>
                 </div>
@@ -656,7 +659,7 @@ const availableTools = computed(() => {
               </h3>
               <div class="space-y-6">
                 <div
-                  v-for="(msg, index) in getMessages(activeRequest.payload)"
+                  v-for="(msg, index) in getMessages(activeRequest.payload, activeRequest.id)"
                   :key="index"
                 >
                   <div

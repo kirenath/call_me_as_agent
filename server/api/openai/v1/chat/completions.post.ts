@@ -61,7 +61,6 @@ export default defineEventHandler(async (event) => {
       request.onData = async (chunk) => {
         const speed = chunk.simulateStream ? (settings.streamSpeed || 30) : 0
 
-
         // Handle Content
         if (chunk.content) {
           const content = chunk.content
@@ -127,7 +126,7 @@ export default defineEventHandler(async (event) => {
           }
           sendChunk(lastChunk)
           event.node.res.write('data: [DONE]\n\n')
-          
+
           import('../../../../utils/statsManager').then(({ incrementTokens }) => {
             incrementTokens(promptTokens, completionTokens)
           })
@@ -149,7 +148,7 @@ export default defineEventHandler(async (event) => {
       let bufferedContent = ''
       const bufferedTools: any[] = []
 
-      request.onData = (chunk) => {
+      request.onData = async (chunk) => {
         if (chunk.content) bufferedContent += chunk.content
         if (chunk.toolCalls) bufferedTools.push(...chunk.toolCalls)
 

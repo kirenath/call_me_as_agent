@@ -218,7 +218,7 @@ export default defineEventHandler(async (event) => {
             response: finalResponse
           })
 
-          import('../../../../utils/statsManager').then(({ incrementTokens }) => {
+          import('../../../utils/statsManager').then(({ incrementTokens }) => {
             incrementTokens(promptTokens, completionTokens)
           })
 
@@ -239,7 +239,7 @@ export default defineEventHandler(async (event) => {
     return new Promise((resolve) => {
       const finalOutput: any[] = []
       let totalText = ''
-      request.onData = (chunk) => {
+      request.onData = async (chunk) => {
         if (chunk.content) {
           totalText += chunk.content
           completionTokens += Math.ceil(chunk.content.length / 3)

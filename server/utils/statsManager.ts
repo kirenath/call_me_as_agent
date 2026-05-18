@@ -10,7 +10,7 @@ export interface Stats {
 const defaultStats: Stats = {
   tokensInputToday: 0,
   tokensOutputToday: 0,
-  lastTokenDate: new Date().toISOString().split('T')[0]
+  lastTokenDate: new Date().toISOString().split('T')[0] as string
 }
 
 const statsPath = path.resolve(process.cwd(), '.data', 'stats.json')
@@ -20,7 +20,7 @@ export const getStats = (): Stats => {
     if (fs.existsSync(statsPath)) {
       const data = fs.readFileSync(statsPath, 'utf-8')
       const parsed = JSON.parse(data)
-      const today = new Date().toISOString().split('T')[0]
+      const today = new Date().toISOString().split('T')[0] as string
       if (parsed.lastTokenDate !== today) {
         parsed.tokensInputToday = 0
         parsed.tokensOutputToday = 0
@@ -31,7 +31,7 @@ export const getStats = (): Stats => {
   } catch (e) {
     console.error('[StatsManager] Failed to read stats', e)
   }
-  return { ...defaultStats, lastTokenDate: new Date().toISOString().split('T')[0] }
+  return { ...defaultStats, lastTokenDate: new Date().toISOString().split('T')[0] as string }
 }
 
 export const incrementTokens = (inputAmount: number, outputAmount: number) => {
