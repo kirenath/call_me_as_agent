@@ -874,33 +874,50 @@ const availableTools = computed(() => {
                   <USwitch
                     v-model="simulateStream[activeRequest.id]"
                     size="sm"
+                    :disabled="activeRequest.payload?.stream === false"
                   />
                 </div>
                 <div class="flex items-center gap-2 w-full sm:w-auto">
-                  <UButton
-                    :loading="submitting[activeRequest.id]"
-                    color="neutral"
-                    variant="soft"
-                    size="lg"
-                    class="flex-1 sm:flex-none justify-center"
-                    :disabled="finishing[activeRequest?.id || ''] || (!responses[activeRequest?.id || ''] && (!structuredToolCalls[activeRequest?.id || ''] || structuredToolCalls[activeRequest?.id || '']?.length === 0))"
-                    @click="sendPart(activeRequest.id)"
-                  >
-                    {{ t('send_to_client') }}
-                  </UButton>
-                  <UButton
-                    :loading="finishing[activeRequest.id]"
-                    :disabled="submitting[activeRequest?.id || '']"
-                    color="primary"
-                    size="lg"
-                    class="flex-1 sm:flex-none justify-center"
-                    @click="finish(activeRequest.id)"
-                  >
-                    {{ t('finish_request') }}
-                    <template #trailing>
-                      <UIcon name="i-lucide-check-circle" />
-                    </template>
-                  </UButton>
+                  <template v-if="activeRequest.payload?.stream !== false">
+                    <UButton
+                      :loading="submitting[activeRequest.id]"
+                      color="neutral"
+                      variant="soft"
+                      size="lg"
+                      class="flex-1 sm:flex-none justify-center"
+                      :disabled="finishing[activeRequest?.id || ''] || (!responses[activeRequest?.id || ''] && (!structuredToolCalls[activeRequest?.id || ''] || structuredToolCalls[activeRequest?.id || '']?.length === 0))"
+                      @click="sendPart(activeRequest.id)"
+                    >
+                      {{ t('send_to_client') }}
+                    </UButton>
+                    <UButton
+                      :loading="finishing[activeRequest.id]"
+                      :disabled="submitting[activeRequest?.id || '']"
+                      color="primary"
+                      size="lg"
+                      class="flex-1 sm:flex-none justify-center"
+                      @click="finish(activeRequest.id)"
+                    >
+                      {{ t('finish_request') }}
+                      <template #trailing>
+                        <UIcon name="i-lucide-check-circle" />
+                      </template>
+                    </UButton>
+                  </template>
+                  <template v-else>
+                    <UButton
+                      :loading="finishing[activeRequest.id]"
+                      color="primary"
+                      size="lg"
+                      class="flex-1 sm:flex-none justify-center w-full sm:w-auto"
+                      @click="finish(activeRequest.id)"
+                    >
+                      {{ t('send_and_finish') }}
+                      <template #trailing>
+                        <UIcon name="i-lucide-check-circle" />
+                      </template>
+                    </UButton>
+                  </template>
                 </div>
               </div>
             </div>

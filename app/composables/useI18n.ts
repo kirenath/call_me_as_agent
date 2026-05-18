@@ -85,7 +85,13 @@ const translations = {
     enable_api_key_auth: '开启 API Key 校验',
     enable_api_key_auth_desc: '要求客户端必须提供 API Key 才能访问 OpenAI 和 Claude 端点。',
     expected_api_key: '预期 API Key',
-    expected_api_key_desc: '客户端必须在 Header 中发送此完全一致的 Key。'
+    expected_api_key_desc: '客户端必须在 Header 中发送此完全一致的 Key。',
+    show_tokens_public: '公开显示 Token 统计',
+    show_tokens_public_desc: '在首页显示今日的 Token 输入与输出统计。',
+    tokens_label: 'Token 标签名称',
+    tokens_label_desc: '自定义显示 Token 统计时的前缀文字。',
+    toast_timeout: '提示框停留时间 (ms)',
+    toast_timeout_desc: '操作成功/失败时的提示框在屏幕上的停留时间。'
   },
   en: {
     // General
@@ -171,7 +177,13 @@ const translations = {
     enable_api_key_auth: 'Enable API Key Auth',
     enable_api_key_auth_desc: 'Require clients to provide an API key to access OpenAI and Claude endpoints.',
     expected_api_key: 'Expected API Key',
-    expected_api_key_desc: 'Clients must send this exact key in their headers.'
+    expected_api_key_desc: 'Clients must send this exact key in their headers.',
+    show_tokens_public: 'Public Token Stats',
+    show_tokens_public_desc: 'Show today\'s input and output token statistics on the home page.',
+    tokens_label: 'Tokens Label',
+    tokens_label_desc: 'Custom text prefix for token statistics.',
+    toast_timeout: 'Toast Timeout (ms)',
+    toast_timeout_desc: 'Duration for success/error notifications to remain on screen.'
   }
 }
 
