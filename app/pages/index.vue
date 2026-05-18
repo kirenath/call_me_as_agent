@@ -110,43 +110,45 @@ const siteSubtitle = computed(() => settings.value?.siteSubtitle || 'A Human-in-
           </h2>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="border border-[#111111] p-6 hard-shadow-hover bg-[#F9F9F7]">
-              <div class="flex justify-between items-start mb-4 border-b border-[#111111] pb-4">
+            <button
+              type="button"
+              @click="copyToClipboard(`${baseUrl}/api/openai/v1`)"
+              class="border border-[#111111] p-6 hard-shadow-hover bg-[#F9F9F7] text-left cursor-pointer w-full transition-all"
+            >
+              <div class="flex justify-between items-start mb-4 border-b border-[#111111] pb-4 gap-3">
                 <div class="flex items-center gap-2">
                   <UIcon name="i-simple-icons-openai" class="text-[#111111] w-6 h-6" />
                   <span class="font-bold font-serif-display text-2xl">OpenAI V1</span>
                 </div>
-                <button 
-                  @click="copyToClipboard(`${baseUrl}/api/openai/v1`)"
-                  class="text-[#111111] underline-offset-4 decoration-2 decoration-[#CC0000] hover:underline text-xs font-mono-data uppercase tracking-widest font-bold cursor-pointer"
-                >
+                <span class="text-[#111111] underline-offset-4 decoration-2 decoration-[#CC0000] hover:underline text-xs font-mono-data uppercase tracking-widest font-bold">
                   [复制]
-                </button>
+                </span>
               </div>
               <code class="text-xs break-all block font-mono-data text-[#111111] mb-4">{{ baseUrl }}/api/openai/v1</code>
               <div v-if="settings?.showApiKeyPublic && settings?.enableApiKeyAuth" class="text-[10px] text-[#CC0000] uppercase font-bold tracking-widest flex items-center gap-1 font-mono-data">
                 <UIcon name="i-lucide-key" /> {{ t('auth_hint') }}
               </div>
-            </div>
+            </button>
 
-            <div class="border border-[#111111] p-6 hard-shadow-hover bg-[#F9F9F7]">
-              <div class="flex justify-between items-start mb-4 border-b border-[#111111] pb-4">
+            <button
+              type="button"
+              @click="copyToClipboard(`${baseUrl}/api/claude`)"
+              class="border border-[#111111] p-6 hard-shadow-hover bg-[#F9F9F7] text-left cursor-pointer w-full transition-all"
+            >
+              <div class="flex justify-between items-start mb-4 border-b border-[#111111] pb-4 gap-3">
                 <div class="flex items-center gap-2">
                   <UIcon name="i-simple-icons-anthropic" class="text-[#111111] w-6 h-6" />
                   <span class="font-bold font-serif-display text-2xl">Claude V1</span>
                 </div>
-                <button 
-                  @click="copyToClipboard(`${baseUrl}/api/claude`)"
-                  class="text-[#111111] underline-offset-4 decoration-2 decoration-[#CC0000] hover:underline text-xs font-mono-data uppercase tracking-widest font-bold cursor-pointer"
-                >
+                <span class="text-[#111111] underline-offset-4 decoration-2 decoration-[#CC0000] hover:underline text-xs font-mono-data uppercase tracking-widest font-bold">
                   [复制]
-                </button>
+                </span>
               </div>
               <code class="text-xs break-all block font-mono-data text-[#111111] mb-4">{{ baseUrl }}/api/claude</code>
               <div v-if="settings?.showApiKeyPublic && settings?.enableApiKeyAuth" class="text-[10px] text-[#CC0000] uppercase font-bold tracking-widest flex items-center gap-1 font-mono-data">
                 <UIcon name="i-lucide-key" /> {{ t('auth_hint') }}
               </div>
-            </div>
+            </button>
           </div>
         </div>
 
