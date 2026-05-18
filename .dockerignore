@@ -1,0 +1,14 @@
+node_modules
+.pnpm-store
+.nuxt
+.output
+.git
+.gitignore
+.vscode
+.idea
+.env
+.env.*
+npm-debug.log*
+pnpm-debug.log*
+Dockerfile
+prd
