@@ -1,6 +1,84 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
+@import "@fontsource/playfair-display";
+@import "@fontsource/playfair-display/900.css";
+@import "@fontsource/playfair-display/700.css";
+@import "@fontsource/lora";
+@import "@fontsource/lora/400-italic.css";
+@import "@fontsource/inter";
+@import "@fontsource/jetbrains-mono";
+@import "@fontsource/noto-sans-sc";
 
 :root {
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --color-brand-light: #F9F9F7;
+  --color-brand: #111111;
+  --color-accent: #CC0000;
+  --color-muted: #E5E5E0;
 }
+
+body {
+  font-family: 'Lora', Georgia, serif;
+  background-color: var(--color-brand-light);
+  color: var(--color-brand);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath fill='%23111111' fill-opacity='0.04' d='M1 3h1v1H1V3zm2-2h1v1H3V1z'%3E%3C/path%3E%3C/svg%3E");
+}
+
+/* Typography Utilities */
+.font-serif-display {
+  font-family: 'Playfair Display', 'Times New Roman', serif;
+}
+.font-sans-ui {
+  font-family: 'Inter', 'Helvetica Neue', sans-serif;
+}
+.font-mono-data {
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+}
+
+.font-noto-sc {
+  font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+/* Newsprint Specific Styles */
+* {
+  border-radius: 0px !important;
+}
+
+.newsprint-texture {
+  position: relative;
+}
+.newsprint-texture::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(0deg, transparent 98%, rgba(0,0,0,0.02) 100%),
+    linear-gradient(90deg, transparent 98%, rgba(0,0,0,0.02) 100%);
+  background-size: 3px 3px;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.hard-shadow-hover {
+  transition: all 200ms ease-out;
+}
+.hard-shadow-hover:hover {
+  box-shadow: 4px 4px 0px 0px #111111;
+  transform: translate(-2px, -2px);
+  background-color: #F5F5F5;
+}
+
+.magazine-divider {
+  border-top: 4px solid var(--color-brand);
+  margin: 3rem 0;
+}
+
+.drop-cap::first-letter {
+  font-family: 'Playfair Display', serif;
+  font-size: 5em;
+  float: left;
+  line-height: 0.8;
+  margin-right: 0.1em;
+  margin-top: 0.05em;
+  color: var(--color-brand);
+}
+

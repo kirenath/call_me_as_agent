@@ -20,6 +20,11 @@
     "tailwindcss": "^4.3.0"
   },
   "devDependencies": {
+    "@fontsource/inter": "^5.2.8",
+    "@fontsource/jetbrains-mono": "^5.2.8",
+    "@fontsource/lora": "^5.2.8",
+    "@fontsource/noto-sans-sc": "^5.2.9",
+    "@fontsource/playfair-display": "^5.2.8",
     "@nuxt/eslint": "^1.15.2",
     "@types/node": "^25.8.0",
     "eslint": "^10.3.0",
