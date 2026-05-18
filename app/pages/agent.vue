@@ -223,11 +223,6 @@ const sendPart = async (id: string) => {
 
       toast.add({ title: t('response_sent'), color: 'success' })
       scrollToBottom()
-
-      // If streaming, we wait for a bit to let the client "consume" the stream
-      if (isStreaming) {
-        await new Promise(resolve => setTimeout(resolve, 500))
-      }
     } catch (error) {
       console.error('Failed to send part:', error)
       toast.add({ title: t('response_failed'), color: 'error' })
